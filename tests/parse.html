@@ -4,12 +4,11 @@
 
 <meta charset="UTF-8">
 <title>Color parse tests</title>
-<link rel="stylesheet" href="https://test.mavo.io/style.css" />
-<link rel="stylesheet" href="style.css" />
-<script src="https://blissfuljs.com/bliss.shy.js"></script>
-<script src="https://test.mavo.io/test.js"></script>
+<link rel="stylesheet" href="https://htest.dev/htest.css" crossorigin />
+<script src="https://htest.dev/htest.js" crossorigin></script>
 
-<script src="../color.js" type="module"></script>
+<link rel="stylesheet" href="style.css" />
+
 <script>
 
 </script>
@@ -51,9 +50,17 @@
 			<td>rgba(0% 50% 200% / 0.5)</td>
 			<td>{"spaceId":"srgb","coords":[0,0.5,2],"alpha":0.5}</td>
 		</tr>
+		<tr title="rgb(r g b / a)">
+			<td>rgb(0 127.5 300 / .5)</td>
+			<td>{"spaceId":"srgb","coords":[0,0.5,1.1764705882352942],"alpha":0.5}</td>
+		</tr>
 		<tr title="rgba(n, n, n, a)">
 			<td>rgba(0, 127.5, 300, 0.5)</td>
 			<td>{"spaceId":"srgb","coords":[0,0.5,1.1764705882352942],"alpha":0.5}</td>
+		</tr>
+		<tr data-error>
+			<td>rgb(10deg 10 10)</td>
+			<td>TypeError</td>
 		</tr>
 	</table>
 </section>
@@ -94,36 +101,79 @@
 
 	<table class="reftest" data-test="colorParse" data-columns="3" data-colors="1">
 		<tr>
-			<td>color(display-p3 0 .5 1)</td>
-			<td>{"spaceId":"p3","coords":[0,0.5,1],"alpha":1}</td>
+			<td>color(srgb 0 1 .5)</td>
+			<td>{"spaceId":"srgb","coords":[0,1,0.5],"alpha":1}</td>
 		</tr>
 		<tr>
-			<td>color(a98-rgb 0 .5 1)</td>
-			<td>{"spaceId":"a98rgb","coords":[0,0.5,1],"alpha":1}</td>
+			<td>color(srgb-linear 0 1 .5)</td>
+			<td>{"spaceId":"srgb-linear","coords":[0,1,0.5],"alpha":1}</td>
 		</tr>
-		<tr title="P3 lime with transparency">
+		<tr>
+			<td>color(display-p3 0 1 .5)</td>
+			<td>{"spaceId":"p3","coords":[0,1,0.5],"alpha":1}</td>
+		</tr>
+		<tr>
+			<td>color(rec2020 0 1 .5)</td>
+			<td>{"spaceId":"rec2020","coords":[0,1,0.5],"alpha":1}</td>
+		</tr>
+		<tr>
+			<td>color(a98-rgb 0 1 .5)</td>
+			<td>{"spaceId":"a98rgb","coords":[0,1,0.5],"alpha":1}</td>
+		</tr>
+		<tr>
+			<td>color(prophoto-rgb 0 1 .5)</td>
+			<td>{"spaceId":"prophoto","coords":[0,1,0.5],"alpha":1}</td>
+		</tr>
+		<tr>
+			<td>color(acescc 0 1 .5)</td>
+			<td>{"spaceId":"acescc","coords":[0,1,0.5],"alpha":1}</td>
+		</tr>
+		</tr>
+		<tr>
+			<td>color(acescg 0 1 .5)</td>
+			<td>{"spaceId":"acescg","coords":[0,1,0.5],"alpha":1}</td>
+		</tr>
+		</tr>
+		<tr>
+			<td>color(acescg 0 1 .5)</td>
+			<td>{"spaceId":"acescg","coords":[0,1,0.5],"alpha":1}</td>
+		</tr>
+		<tr>
+			<td>color(xyz 0 1 .5)</td>
+			<td>{"spaceId":"xyz-d65","coords":[0,1,0.5],"alpha":1}</td>
+		</tr>
+		<tr>
+			<td>color(xyz-d65 0 1 .5)</td>
+			<td>{"spaceId":"xyz-d65","coords":[0,1,0.5],"alpha":1}</td>
+		</tr>
+		<tr>
+			<td>color(xyz-d50 0 1 .5)</td>
+			<td>{"spaceId":"xyz-d50","coords":[0,1,0.5],"alpha":1}</td>
+		</tr>
+		<tr title="With transparency">
 			<td>color(display-p3 0 1 0 / .5)</td>
 			<td>{"spaceId":"p3","coords":[0,1,0],"alpha":0.5}</td>
 		</tr>
-		<tr title="P3 no arguments">
+		<tr title="No arguments">
 			<td>color(display-p3)</td>
 			<td>{"spaceId":"p3","coords":[0,0,0],"alpha":1}</td>
 		</tr>
 		</tr>
-		<tr title="P3 no arguments with transparency">
+		<tr title="No arguments / alpha">
 			<td>color(display-p3 / .5)</td>
 			<td>{"spaceId":"p3","coords":[0,0,0],"alpha":0.5}</td>
 		</tr>
 		</tr>
-		<tr title="P3 fewer arguments">
+		<tr title="Fewer arguments">
 			<td>color(display-p3 1)</td>
 			<td>{"spaceId":"p3","coords":[1,0,0],"alpha":1}</td>
 		</tr>
 		</tr>
-		<tr title="P3 fewer arguments">
+		<tr title="Fewer arguments / alpha">
 			<td>color(display-p3 1 / .5)</td>
 			<td>{"spaceId":"p3","coords":[1,0,0],"alpha":0.5}</td>
 		</tr>
+
 	</table>
 </section>
 
@@ -150,8 +200,21 @@
 	</table>
 </section>
 
-<script>
-function colorParse(test, result, expected) {
+<section>
+	<h1>hwb()</h1>
+
+	<table class="reftest" data-test="colorParse" data-columns="3" data-colors="1">
+		<tr>
+			<td>hwb(180 20% 30%)</td>
+			<td>{"spaceId":"hwb","coords":[180,20,30],"alpha":1}</td>
+		</tr>
+	</table>
+</section>
+
+<script type="module">
+import Color from "../src/index.js";
+
+window.colorParse = function colorParse(test, result, expected) {
 	var err;
 
 	try {
@@ -170,7 +233,7 @@ function colorParse(test, result, expected) {
 	return err || false;
 }
 </script>
-<script src="index.js"></script>
+<script src="index.js" type="module"></script>
 
 </body>
 </html>

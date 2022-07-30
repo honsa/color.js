@@ -34,8 +34,8 @@
 :root {
 		--page-margin: max(1rem, (100vw - var(--page-width)) / 2);
 		--rainbow-width: max(150vw, 900px)
-}
-	}
+	
+}}
 
 @supports (-moz-margin-start: 0) {
 
@@ -93,6 +93,10 @@ a:active {
 		color: var(--color-red);
 	}
 
+img {
+	max-width: 100%;
+}
+
 fieldset {
 	border: 1px solid hsl(var(--gray) 80%);
 	border-radius: .2em
@@ -124,16 +128,16 @@ table thead th {
 		}
 
 table tbody th,
-		table tbody td,
 		table tfoot th,
+		table tbody td,
 		table tfoot td {
 			background: hsla(0 0% 100% / .95);
 			border: 1px solid transparent;
 		}
 
 table tbody tr:nth-of-type(even) td,
-			table tbody tr:nth-of-type(even) th,
 			table tfoot tr:nth-of-type(even) td,
+			table tbody tr:nth-of-type(even) th,
 			table tfoot tr:nth-of-type(even) th {
 				background: hsla(0 0% 100% / .8);
 			}
@@ -171,23 +175,64 @@ body > footer {
 	animation: var(--rainbow-scroll)
 }
 
+body > header nav > .menu, body > footer nav > .menu {
+			flex: 1;
+			display: flex;
+			position: relative
+		}
+
+body > header nav > .menu > ul, body > footer nav > .menu > ul {
+				position: absolute;
+				z-index: 1;
+				padding: 0;
+				margin: 0;
+				list-style: none;
+				background: white;
+				box-shadow: .1em .5em 1em hsl(0 0% 0% / .1);
+				border-radius: 4px;
+				transition: 150ms
+			}
+
+body > header nav > .menu > ul a, body > footer nav > .menu > ul a {
+					text-align: left;
+				}
+
+body > header nav > .menu:not(:focus-within, :hover) > ul, body > footer nav > .menu:not(:focus-within, :hover) > ul {
+				transform: scale(0);
+				opacity: 0;
+			}
+
 body > header nav a, body > footer nav a {
+			display: block;
 			text-align: center;
 		}
 
-body > header nav a:not(.logo), body > footer nav a:not(.logo) {
+body > header nav > .menu > a,
+		body > footer nav > .menu > a,
+		body > header nav a:not(.logo),
+		body > footer nav a:not(.logo) {
 			flex: 1;
 			padding: .6em;
 			font-weight: 800;
 			white-space: nowrap
 		}
 
-body > header nav a:not(.logo):hover, body > footer nav a:not(.logo):hover {
+body > header nav > .menu > a:hover, body > footer nav > .menu > a:hover, body > header nav a:not(.logo):hover, body > footer nav a:not(.logo):hover {
 				background: var(--rainbow);
 				-webkit-background-clip: initial;
 				color: white;
 				text-decoration: none;
 			}
+
+header .menu > ul {
+	top: 100%;
+	transform-origin: top left;
+}
+
+footer .menu > ul {
+	bottom: 100%;
+	transform-origin: bottom left;
+}
 
 [mv-app="colorNotebook"] h1,
 body > header > h1 {
@@ -335,6 +380,11 @@ main > footer .edit-page {
 			background: white;
 		}
 
+:not(pre) > code,
+pre {
+	font-family: var(--font-monospace);
+}
+
 :not(pre) > code[class*="language-"],
 pre[class*="language-"] {
 	background: repeating-conic-gradient(transparent 0 25%, rgb(0 0 0 / .02) 0 50%) 0 0 / 1.5em 1.5em content-box border-box;
@@ -356,7 +406,8 @@ pre[class*="language-"] {
 @supports (-webkit-background-clip: text) and (not (-moz-margin-start: 0)) {
 	body > header nav a,
 	body > footer nav a,
-	main h2 {
+	main h2,
+	main h2 > a {
 		background: var(--rainbow);
 		animation: var(--rainbow-scroll);
 		-webkit-background-clip: text;

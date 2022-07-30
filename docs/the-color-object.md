@@ -16,13 +16,6 @@ let color3 = new Color("color(display-p3 0 1 0)");
 let color4 = new Color("lch(50% 80 30)");
 ```
 
-You can even use CSS variables, optionally with a DOM element against which they will be resolved (defaults to document root):
-
-```js
-new Color("--color-blue");
-new Color("--color-green", document.querySelector("h1"));
-```
-
 ## Color space and coordinates
 
 Internally, every Color object is stored this way, so this is the most low level way to create a Color object.
@@ -49,6 +42,11 @@ let red1 = new Color({space: "lab", coords: [50, 50, 50]});
 let red2 = new Color({spaceId: "lab", coords: [50, 50, 50]});
 let redClone = new Color(red1);
 ```
+
+Everything in Color.js that accepts a color space id, also accepts a color space object.
+You can find these objects on `Color.spaces` (object, includes aliases) or `Color.Space.all` (array, no aliases).
+They include a lot of metadata about the color space which can be useful to handle color generically
+(e.g. like [this demo](../apps/convert/))
 
 ## Color object properties
 
@@ -88,29 +86,14 @@ Named coordinates are also available:
 
 ```js
 let color = new Color("deeppink");
-color.srgb.green;
-color.srgb.green = .5;
+color.srgb.g;
+color.srgb.g = .5;
 color;
 ```
 
-Note that unless we explicitly change a color's color space, it remains in the same color space it was when it was created.
-Manipulating coordinates of other color spaces do not change a color's space, it is just internally converted to another space and then back to its own.
-To convert a color to a different color space, you need to change its `space` or `spaceId` properties.
-Both accept either a color space object, or an id:
-
-
-```js
-let color = new Color("srgb", [0, 1, 0]);
-color.space = "p3";
-color;
-color.space = Color.spaces.prophoto;
-color;
-```
-
-Often, we want to keep our color intact,
-but also convert it to another color space,
-creating a new Color object.
-This is exactly what `color.to()` is for:
+Note that a color's color space is immutable once the `Color` object is created.
+Manipulating coordinates of other color spaces does not change a color's space, the coordinates are converted to the other color space and then back to the color's color space after the manipulation.
+To convert a color to a different color space, you need to call `color.to()`, which will return a new `Color` object.
 
 ```js
 let color = new Color("srgb", [0, 1, 0]);

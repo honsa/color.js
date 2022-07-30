@@ -249,7 +249,7 @@
 							"name": "options.method",
 							"optional": true,
 							"type": "string",
-							"description": "How to force into gamut. If \"clip\", coordinates are just clipped to their reference range (don't do that unless you have a reason, it produces very poor results). If in the form [colorSpaceId].[coordName], that coordinate is reduced until the color is in gamut. Please note that this may produce nonsensical results for certain coordinates (e.g. hue) or infinite loops if reducing the coordinate never brings the color in gamut. Defaults to `\"lch.chroma\"`."
+							"description": "How to force into gamut. If \"clip\", coordinates are just clipped to their reference range (don't do that unless you have a reason, it produces very poor results). If in the form [colorSpaceId].[coordName], that coordinate is reduced until the color is in gamut. Please note that this may produce nonsensical results for certain coordinates (e.g. hue) or infinite loops if reducing the coordinate never brings the color in gamut. Defaults to `\"lch.c\"`."
 						},
 						{
 							"name": "options.space",
@@ -360,36 +360,10 @@
 					"returnDescription": "Serialized color"
 				},
 				{
-					"name": "chromaticAdaptation",
-					"static": true,
-					"role": "function",
-					"description": "Adapt a XYZ coordinates from one white point to another. Only supports D50 and D65 out of the box. but you can add support for more white points by importing the CAT module.",
-					"argument": [
-						{
-							"name": "W1",
-							"optional": false,
-							"type": "Array",
-							"description": "White point to adapt from"
-						},
-						{
-							"name": "W2",
-							"optional": false,
-							"type": "Array",
-							"description": "White point to adapt to"
-						},
-						{
-							"name": "XYZ",
-							"optional": false,
-							"type": "Array",
-							"description": "XYZ coordinates to adapt"
-						}
-					]
-				},
-				{
 					"name": "parse",
 					"static": true,
 					"role": "function",
-					"description": "Parse a string as a color. Understands all [CSS Color 4](https://w3.org/TR/css-color-4) functions. Uses the DOM if present to parse hex colors and color names, so that will not not available in non-DOM environments such as Node.js.",
+					"description": "Parse a string as a color. Understands all [CSS Color 4](https://w3.org/TR/css-color-4) functions. Uses the DOM if present to parse hex colors and color names, so that will not available in non-DOM environments such as Node.js.",
 					"argument": [
 						{
 							"name": "str",
@@ -400,22 +374,6 @@
 					],
 					"returnType": "Object",
 					"returnDescription": "An object with properties `spaceId`, `coords`, `alpha` that can be then passed to the `Color` constructor to create a new color."
-				},
-				{
-					"name": "parseFunction",
-					"static": true,
-					"role": "function",
-					"argument": [
-						{
-							"optional": false,
-							"name": "str",
-							"type": "string",
-							"description": "String to parse"
-						}
-					],
-					"description": "Parse a functional notation and return an object. Used internally by [`Color.parse()`](#Color.parse)",
-					"returnType": "Object",
-					"returnDescription": "An object with `name` (function name), `args` (Array) and `rawArgs` (string) properties."
 				},
 				{
 					"name": "convert",
@@ -469,20 +427,6 @@
 							"optional": false,
 							"name": "spaceOrId",
 							"type": "Object | string"
-						}
-					]
-				},
-				{
-					"name": "defineSpace",
-					"static": true,
-					"role": "function",
-					"description": "Define a new color space",
-					"argument": [
-						{
-							"optional": false,
-							"name": "space",
-							"type": "Object",
-							"description": "Object with color space details."
 						}
 					]
 				},
@@ -754,6 +698,113 @@
 			]
 		},
 		{
+			"name": "ColorSpace",
+			"filename": "space.js",
+			"description": "Class for color spaces. Each color space corresponds to a `ColorSpace` instance.",
+			"member": [
+				{
+					"static": false,
+					"role": "constructor",
+					"argument": [
+						{
+							"name": "options",
+							"optional": false,
+							"type": "Object"
+						},
+						{
+							"name": "options.id",
+							"optional": false,
+							"type": "String",
+							"description": "Id of this color space, to be used in conversions etc"
+						},
+						{
+							"name": "options.name",
+							"optional": false,
+							"type": "String",
+							"description": "Readable name, to be used in user-facing UI"
+						},
+						{
+							"name": "options.coords",
+							"optional": false,
+							"type": "Object",
+							"description": "Object of coord ids to coord metadata (range, refRange, name, type)"
+						},
+						{
+							"name": "options.base",
+							"optional": true,
+							"type": "String | ColorSpace",
+							"description": "Base color space"
+						},
+						{
+							"name": "options.toBase",
+							"optional": true,
+							"type": "Function",
+							"description": "Function that converts coords in this color space to coords in the base color space. Must perform chromatic adaptation if needed."
+						},
+						{
+							"name": "options.fromBase",
+							"optional": true,
+							"type": "Function",
+							"description": "Function that converts coords in the base color space to coords in this color space. Must perform chromatic adaptation if needed."
+						},
+						{
+							"name": "options.formats",
+							"optional": true,
+							"type": "Object",
+							"description": "Details about string formats to parse from / serialize to."
+						},
+						{
+							"name": "options.referred",
+							"optional": true,
+							"type": "\"display\" | \"scene\""
+						}
+					]
+				},
+				{
+					"name": "inGamut",
+					"static": false,
+					"role": "function",
+					"argument": [
+						{
+							"name": "coords",
+							"optional": false,
+							"type": "Array"
+						},
+						{
+							"name": "options",
+							"optional": true,
+							"type": "Object"
+						},
+						{
+							"name": "options.epsilon",
+							"optional": true,
+							"type": "Number",
+							"description": "Tolerance"
+						}
+					],
+					"returnType": "Boolean"
+				},
+				{
+					"name": "to",
+					"static": false,
+					"role": "function",
+					"argument": [
+						{
+							"name": "space",
+							"optional": false,
+							"type": "String | ColorSpace"
+						},
+						{
+							"name": "coords",
+							"optional": false,
+							"type": "Array"
+						}
+					],
+					"returnType": "Array"
+				}
+			]
+		},
+		{
 			"name": "util",
 			"filename": "util.js",
 			"description": "Collection of utility functions. Available on `Color.util`, or as separate exports.",
@@ -789,74 +840,10 @@
 					"returnDescription": "The internal [[Class]] of o, lowercased."
 				},
 				{
-					"name": "extend",
-					"static": true,
-					"role": "function",
-					"description": "Like [Object.assign()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/assign) but copies property descriptors (including symbols)",
-					"argument": [
-						{
-							"name": "target",
-							"optional": false,
-							"type": "Object",
-							"description": " Object to copy to"
-						},
-						{
-							"name": "...sources",
-							"optional": false,
-							"type": "...Object",
-							"description": "Object(s) to copy from"
-						}
-					],
-					"returnType": "Object",
-					"returnDescription": "target (which has now acquired new properties)"
-				},
-				{
-					"name": "copyDescriptor",
-					"static": true,
-					"role": "function",
-					"description": "Copy a single descriptor from one object to another.",
-					"argument": [
-						{
-							"name": "target",
-							"optional": false,
-							"type": "Object",
-							"description": "Object to copy to"
-						},
-						{
-							"name": "source",
-							"optional": false,
-							"type": "Object",
-							"description": "Object to copy from"
-						},
-						{
-							"name": "property",
-							"optional": false,
-							"type": "string",
-							"description": "Name of property"
-						}
-					]
-				},
-				{
-					"name": "capitalize",
-					"static": true,
-					"role": "function",
-					"description": "Uppercase the first letter of a string",
-					"argument": [
-						{
-							"name": "str",
-							"optional": false,
-							"type": "string",
-							"description": "String to capitalize"
-						}
-					],
-					"returnDescription": "Capitalized string",
-					"returnType": "string"
-				},
-				{
 					"name": "toPrecision",
 					"static": false,
 					"role": "function",
-					"description": "Round a number to a certain number of significant digits based on a range.",
+					"description": "Round a number to a certain number of significant digits.",
 					"argument": [
 						{
 							"name": "n",
@@ -869,15 +856,25 @@
 							"optional": false,
 							"type": "Number",
 							"description": "Number of significant digits"
-						},
-						{
-							"name": "range",
-							"optional": true,
-							"type": "Array",
-							"description": "Range to base number of decimals on"
 						}
 					],
 					"returnType": "Number"
+				},
+				{
+					"name": "parseFunction",
+					"static": true,
+					"role": "function",
+					"argument": [
+						{
+							"optional": false,
+							"name": "str",
+							"type": "string",
+							"description": "String to parse"
+						}
+					],
+					"description": "Parse a functional notation and return an object. Used internally by [`Color.parse()`](#Color.parse)",
+					"returnType": "Object",
+					"returnDescription": "An object with `name` (function name), `args` (Array) and `rawArgs` (string) properties."
 				}
 			]
 		},
@@ -910,9 +907,52 @@
 			]
 		},
 		{
+			"name": "adapt",
+			"filename": "adapt.js",
+			"description": "Chromatic adaptation",
+			"member": [
+				{
+					"name": "adapt",
+					"static": true,
+					"role": "function",
+					"description": "Adapt a XYZ coordinates from one white point to another. Only supports D50 and D65 out of the box. but you can add support for more white points by importing the CAT module.",
+					"argument": [
+						{
+							"name": "W1",
+							"optional": false,
+							"type": "Array",
+							"description": "White point to adapt from"
+						},
+						{
+							"name": "W2",
+							"optional": false,
+							"type": "Array",
+							"description": "White point to adapt to"
+						},
+						{
+							"name": "XYZ",
+							"optional": false,
+							"type": "Array",
+							"description": "XYZ coordinates to adapt"
+						}
+					]
+				},
+				{
+					"name": "WHITES",
+					"static": false,
+					"role": "property",
+					"argument": [
+						{
+							"optional": false
+						}
+					]
+				}
+			]
+		},
+		{
 			"name": "Hooks",
 			"filename": "hooks.js",
-			"description": "**This is for plugin authors. If you're not interested in writing plugins for Color.js, you can skip this.**\nHooks afford extensibility far beyond what can be achieved by overriding properties and methods, or using functions. Hooks allow plugin authors to change how Color.js’ internal code works, by adding custom callbacks to predefined points in the execution.\nYou can find available hooks by searching the source code for `Color.hooks.run(` or `_.hooks.run(` in color.js.\nIf you need a hook that is not present, we typically accept pull requests for new hooks pretty easily!",
+			"description": "**This is for plugin authors. If you're not interested in writing plugins for Color.js, you can skip this.**\nHooks afford extensibility far beyond what can be achieved by overriding properties and methods, or using functions. Hooks allow plugin authors to change how Color.js’ internal code works, by adding custom callbacks to predefined points in the execution.\nYou can find available hooks by searching the source code for `hooks.run(` or `hooks.run(` in color.js.\nIf you need a hook that is not present, we typically accept pull requests for new hooks pretty easily!\n\nThe Hooks module exports both a hooks object that is used throughout Color.js (as a default export), as well as a `Hooks` class (as a named export) that can be used to create new sets of hooks.",
 			"member": [
 				{
 					"name": "add",

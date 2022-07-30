@@ -85,16 +85,19 @@ and scale Z by 0.82521/1.08883.
 Simple, let's do exactly that to all the other colors.
 
 This doesn't predict corresponding colors _at all well_
-so we don't implement it. But you can do it yourself if you want:
+so we don't implement it. You could try to do it yourself if you wanted:
 
 ```js
-let W1 = Color.whites.D65;
-let W2 = Color.whites.D50;
-let Xscale = W2.x/W1.x;
-let Zscale = W2.z/W1.z;
+let W1 = Color.WHITES.D65;
+let W2 = Color.WHITES.D50;
+let Xscale = W1[0]/W2[0];
+let Zscale = W1[2]/W2[2];
 let color = new Color("rebeccapurple");
 let color2 = color.xyz /// aah nevermind this isn't going to work
 ```
+
+but it would not be worth the trouble.
+Don't do this.
 
 ### von Kries
 
@@ -112,10 +115,13 @@ as long as the two illuminants are fairly similar to daylight,
 and the colors to be adapted are not very saturated.
 
 ```js
-let W1 = Color.whites.D65;
-let W2 = Color.whites.D50;
+let W1 = Color.WHITES.D65;
+let W2 = Color.WHITES.D50;
 let color = new Color("rebeccapurple");
-// okay this isn't going to work either
+// now get the xyz-d65 coordinates
+// and matrix multiply by a cone response matrix
+// scale by the whites
+// and convert back to XYZ with a new white point.
 ```
 
 ### Bradford
@@ -123,10 +129,10 @@ let color = new Color("rebeccapurple");
 Invented by Lam at the University of Bradford,
 this method uses modified (sharpened) cone responses
 with less overlap between the three cone types.
-While this doesn't represent the actual physilogical responses,
+While this doesn't represent the actual physiological responses,
 it does give better predictive accuracy.
 The originally published CAT also incorporated
-a correction for the non-linear resonse of the
+a correction for the non-linear response of the
 short wavelength ("blue") cone.
 Later studies found that this correction
 did not significantly improve accuracy,
@@ -148,13 +154,19 @@ Normally, this is exactly what you want,
 and gives compatibility between our code
 and results obtained via ICC profiles.
 
+```js
+let color = new Color("rebeccapurple");
+let color2 = color.to("lch");
+// Bradford CAT happened for you without any fuss
+```
+
 ### CAT97s
 
 At the close of the 20th century,
 the International Lighting Commission (CIE)
 came up with a _color appearance model_
 which used a modified form of the original, non-linear Bradford CAT.
-It has since been superceeded by later models
+It has since been superseded by later models
 which are more accurate,
 easier to calculate,
 and more numerically stable.
@@ -183,10 +195,12 @@ such as vividly colored stage lighting.
 
 ### CAT16
 
-TODO how is this better than CAT02.
-
-CAT16 gives somewhat better predictions that CAT02,
-particularly with vivid non-white illuminants.
+Li et al showed that CAT16 gives somewhat better predictions than CAT02,
+particularly with vivid non-white illuminants,
+while also being more numerically robust and mathematically simpler.
+// A Revision of CIECAM02 and its CAT and UCS
+// Changjun Li, Zhiqiang Li, et al (2016)
+// 24th Color and Imaging Conference Final Program and Proceedings
 
 CAT16, as originally published, has been criticized by Smet & Ma
 for incorrectly scaling by a reference white luminance,
@@ -198,7 +212,7 @@ CAT16 defines both a one-stage and a two-stage CAT;
 in the latter, colors are first adapted to an equal-energy white
 and then to the destination white in a second step.
 We have only implemented the one-stage CAT,
-which gived idential results for full adaptation.
+which gived identical results for full adaptation.
 
 ## Using CATs
 
@@ -210,8 +224,8 @@ and also ProPhoto RGB and most CMYK colorspaces.
 Attempting to use another whitepoint or a different method will give an error.
 
 ```js
-let color1 = new Color("p3" 0.22 0.63 0.42); // D65 white
-let color2 = new Color("prophoto" 0.15 0.54 0.21); //D50 white
+let color1 = new Color("p3", [0.22, 0.63, 0.42]); // D65 white
+let color2 = new Color("prophoto", [0.15, 0.54, 0.21]); //D50 white
 color1.lch;
 // linear Bradford was used to adapt to D50 before conversion to Lab
 color2.lch;

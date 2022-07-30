@@ -1,45 +1,52 @@
-import Color, {util} from "./color.js";
+/**
+ * Functions related to color interpolation
+ */
+import Color from "./color.js";
+import ColorSpace from "./space.js";
+import {type, interpolate} from "./util.js";
+import {getColor, clone, to, toGamut, get, set} from "./index-fn.js";
+import defaults from "./defaults.js";
 import * as angles from "./angles.js";
+import deltaE from "./deltaE.js";
 
-let methods = {
-	range (...args) {
-		return Color.range(this, ...args);
-	},
+/**
+ * Return an intermediate color between two colors
+ * Signatures: mix(c1, c2, p, options)
+ *             mix(c1, c2, options)
+ *             mix(color)
+ * @param {Color | string} c1 The first color
+ * @param {Color | string} [c2] The second color
+ * @param {number} [p=.5] A 0-1 percentage where 0 is c1 and 1 is c2
+ * @param {Object} [o={}]
+ * @return {Color}
+ */
+export function mix (c1, c2, p = .5, o = {}) {
+	[c1, c2] = [getColor(c1), getColor(c2)];
 
-	/**
-	 * Return an intermediate color between two colors
-	 * Signatures: color.mix(color, p, options)
-	 *             color.mix(color, options)
-	 *             color.mix(color)
-	 */
-	mix (color, p = .5, o = {}) {
-		if (util.type(p) === "object") {
-			[p, o] = [.5, p];
-		}
-
-		let {space, outputSpace} = o;
-
-		color = Color.get(color);
-		let range = this.range(color, {space, outputSpace});
-		return range(p);
-	},
-
-	/**
-	 * Interpolate to color2 and return an array of colors
-	 * @returns {Array[Color]}
-	 */
-	steps (...args) {
-		return Color.steps(this, ...args);
+	if (type(p) === "object") {
+		[p, o] = [.5, p];
 	}
-};
 
-Color.steps = function(color1, color2, options = {}) {
-	let range;
+	let {space, outputSpace} = o;
 
-	if (isRange(color1)) {
+	let r = range(c1, c2, {space, outputSpace});
+	return r(p);
+}
+
+/**
+ *
+ * @param {Color | string | Function} c1 The first color or a range
+ * @param {Color | string} [c2] The second color if c1 is not a range
+ * @param {Object} [options={}]
+ * @return {Color[]}
+ */
+export function steps (c1, c2, options = {}) {
+	let colorRange;
+
+	if (isRange(c1)) {
 		// Tweaking existing range
-		[range, options] = [color1, color2];
-		[color1, color2] = range.rangeArgs.colors;
+		[colorRange, options] = [c1, c2];
+		[c1, c2] = colorRange.rangeArgs.colors;
 	}
 
 	let {
@@ -48,13 +55,12 @@ Color.steps = function(color1, color2, options = {}) {
 		...rangeOptions
 	} = options;
 
-	if (!range) {
-		color1 = Color.get(color1);
-		color2 = Color.get(color2);
-		range = Color.range(color1, color2, rangeOptions);
+	if (!colorRange) {
+		[c1, c2] = [getColor(c1), getColor(c2)];
+		colorRange = range(c1, c2, rangeOptions);
 	}
 
-	let totalDelta = this.deltaE(color2);
+	let totalDelta = deltaE(c1, c2);
 	let actualSteps = maxDeltaE > 0? Math.max(steps, Math.ceil(totalDelta / maxDeltaE) + 1) : steps;
 	let ret = [];
 
@@ -63,13 +69,13 @@ Color.steps = function(color1, color2, options = {}) {
 	}
 
 	if (actualSteps === 1) {
-		ret = [{p: .5, color: range(.5)}];
+		ret = [{p: .5, color: colorRange(.5)}];
 	}
 	else {
 		let step = 1 / (actualSteps - 1);
 		ret = Array.from({length: actualSteps}, (_, i) => {
 			let p = i * step;
-			return {p, color: range(p)};
+			return {p, color: colorRange(p)};
 		});
 	}
 
@@ -80,8 +86,8 @@ Color.steps = function(color1, color2, options = {}) {
 				return 0;
 			}
 
-			let deltaE = cur.color.deltaE(ret[i - 1].color, deltaEMethod);
-			return Math.max(acc, deltaE);
+			let ΔΕ = deltaE(cur.color, ret[i - 1].color, deltaEMethod);
+			return Math.max(acc, ΔΕ);
 		}, 0);
 
 		while (maxDelta > maxDeltaE) {
@@ -94,9 +100,9 @@ Color.steps = function(color1, color2, options = {}) {
 				let cur = ret[i];
 
 				let p = (cur.p + prev.p) / 2;
-				let color = range(p);
-				maxDelta = Math.max(maxDelta, color.deltaE(prev.color), color.deltaE(cur.color));
-				ret.splice(i, 0, {p, color: range(p)});
+				let color = colorRange(p);
+				maxDelta = Math.max(maxDelta, deltaE(color, prev.color), deltaE(color, cur.color));
+				ret.splice(i, 0, {p, color: colorRange(p)});
 				i++;
 			}
 		}
@@ -109,48 +115,62 @@ Color.steps = function(color1, color2, options = {}) {
 
 /**
  * Interpolate to color2 and return a function that takes a 0-1 percentage
- * @returns {Function}
+ * @param {Color | string | Function} color1 The first color or an existing range
+ * @param {Color | string} [color2] If color1 is a color, this is the second color
+ * @param {Object} [options={}]
+ * @returns {Function} A function that takes a 0-1 percentage and returns a color
  */
-Color.range = function(color1, color2, options = {}) {
+export function range (color1, color2, options = {}) {
 	if (isRange(color1)) {
 		// Tweaking existing range
-		let [range, options] = [color1, color2];
-		return Color.range(...range.rangeArgs.colors, {...range.rangeArgs.options, ...options});
+		let [r, options] = [color1, color2];
+
+		return range(...r.rangeArgs.colors, {...r.rangeArgs.options, ...options});
 	}
 
 	let {space, outputSpace, progression, premultiplied} = options;
 
-	// Make sure we're working on copies of these colors
-	color1 = new Color(color1);
-	color2 = new Color(color2);
+	color1 = getColor(color1);
+	color2 = getColor(color2);
 
+	// Make sure we're working on copies of these colors
+	color1 = clone(color1);
+	color2 = clone(color2);
 
 	let rangeArgs = {colors: [color1, color2], options};
 
 	if (space) {
-		space = Color.space(space);
+		space = ColorSpace.get(space);
 	}
 	else {
-		space = Color.spaces[Color.defaults.interpolationSpace] || color1.space;
+		space = ColorSpace.registry[defaults.interpolationSpace] || color1.space;
 	}
 
-	outputSpace = outputSpace? Color.space(outputSpace) : (color1.space || space);
+	outputSpace = outputSpace? ColorSpace.get(outputSpace) : space;
 
-	color1 = color1.to(space).toGamut();
-	color2 = color2.to(space).toGamut();
+	color1 = to(color1, space);
+	color2 = to(color2, space);
+
+	// Gamut map to avoid areas of flat color
+	color1 = toGamut(color1);
+	color2 = toGamut(color2);
 
 	// Handle hue interpolation
 	// See https://github.com/w3c/csswg-drafts/issues/4735#issuecomment-635741840
-	if (space.coords.hue && space.coords.hue.isAngle) {
+	if (space.coords.h && space.coords.h.type === "angle") {
 		let arc = options.hue = options.hue || "shorter";
 
-		[color1[space.id].hue, color2[space.id].hue] = angles.adjust(arc, [color1[space.id].hue, color2[space.id].hue]);
+		let hue = [space, "h"];
+		let [θ1, θ2] = [get(color1, hue), get(color2, hue)];
+		[θ1, θ2] = angles.adjust(arc, [θ1, θ2]);
+		set(color1, hue, θ1);
+		set(color2, hue, θ2);
 	}
 
 	if (premultiplied) {
 		// not coping with polar spaces yet
-		color1.coords = color1.coords.map (c => c * color1.alpha);
-		color2.coords = color2.coords.map (c => c * color2.alpha);
+		color1.coords = color1.coords.map(c => c * color1.alpha);
+		color2.coords = color2.coords.map(c => c * color2.alpha);
 	}
 
 	return Object.assign(p => {
@@ -159,8 +179,9 @@ Color.range = function(color1, color2, options = {}) {
 			let end = color2.coords[i];
 			return interpolate(start, end, p);
 		});
+
 		let alpha = interpolate(color1.alpha, color2.alpha, p);
-		let ret = new Color(space, coords, alpha);
+		let ret = {space, coords, alpha};
 
 		if (premultiplied) {
 			// undo premultiplication
@@ -168,7 +189,7 @@ Color.range = function(color1, color2, options = {}) {
 		}
 
 		if (outputSpace !== space) {
-			ret = ret.to(outputSpace);
+			ret = to(ret, outputSpace);
 		}
 
 		return ret;
@@ -178,27 +199,14 @@ Color.range = function(color1, color2, options = {}) {
 };
 
 export function isRange (val) {
-	return util.type(val) === "function" && val.rangeArgs;
+	return type(val) === "function" && !!val.rangeArgs;
 };
 
-// Helper
-function interpolate(start, end, p) {
-	if (isNaN(start)) {
-		return end;
-	}
+defaults.interpolationSpace = "lab";
 
-	if (isNaN(end)) {
-		return start;
-	}
-
-	return start + (end - start) * p;
+export function register(Color) {
+	Color.defineFunction("mix", mix, {returns: "color"});
+	Color.defineFunction("range", range, {returns: "function<color>"});
+	Color.defineFunction("steps", steps, {returns: "array<color>"});
 }
 
-Object.assign(Color.defaults, {
-	interpolationSpace: "lab"
-});
-
-Object.assign(Color.prototype, methods);
-Color.statify(Object.keys(methods));
-
-export default Color;

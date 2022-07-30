@@ -1,4 +1,6 @@
-import Color from "../color.js";
+import lab from "../spaces/lab.js";
+import lch from "../spaces/lch.js";
+
 // More accurate color-difference formulae
 // than the simple 1976 Euclidean distance in Lab
 
@@ -7,24 +9,28 @@ import Color from "../color.js";
 // Uses LCH rather than Lab,
 // with different weights for L, C and H differences
 // A nice increase in accuracy for modest increase in complexity
+const π = Math.PI;
+const d2r = π / 180;
 
-Color.prototype.deltaECMC = function (sample, {l = 2, c = 1} = {}) {
-	let color = this;
-	sample = Color.get(sample);
-
+export default function (color, sample, {l = 2, c = 1} = {}) {
 	// Given this color as the reference
 	// and a sample,
 	// calculate deltaE CMC.
 
 	// This implementation assumes the parametric
 	// weighting factors l:c are 2:1
-	//  which is typical for non-textile uses.
+	// which is typical for non-textile uses.
 
-	let [L1, a1, b1] = color.lab;
-	let C1 = color.chroma;
-	let H1 = color.hue;
-	let [L2, a2, b2] = sample.lab;
-	let C2 = sample.chroma;
+	let [L1, a1, b1] = lab.from(color);
+	let [, C1, H1] = lch.from(lab, [L1, a1, b1]);
+	let [L2, a2, b2] = lab.from(sample);
+	let C2 = lch.from(lab, [L2, a2, b2])[1];
+
+	// let [L1, a1, b1] = color.getAll(lab);
+	// let C1 = color.get("lch.c");
+	// let H1 = color.get("lch.h");
+	// let [L2, a2, b2] = sample.getAll(lab);
+	// let C2 = sample.get("lch.c");
 
 	// Check for negative Chroma,
 	// which might happen through
@@ -38,24 +44,17 @@ Color.prototype.deltaECMC = function (sample, {l = 2, c = 1} = {}) {
 	}
 
 	// we don't need H2 as ΔH is calculated from Δa, Δb and ΔC
-	// console.log({L1, a1, b1});
-	// console.log({L2, a2, b2});
 
 	// Lightness and Chroma differences
 	// These are (color - sample), unlike deltaE2000
 	let ΔL = L1 - L2;
 	let ΔC = C1 - C2;
-	// console.log({ΔL});
-	// console.log({ΔC});
 
 	let Δa = a1 - a2;
 	let Δb = b1 - b2;
-	// console.log({Δa});
-	// console.log({Δb});
 
 	// weighted Hue difference, less for larger Chroma difference
-	const π = Math.PI;
-	const d2r = π / 180;
+
 	let H2 = (Δa ** 2) + (Δb ** 2) - (ΔC ** 2);
 	// due to roundoff error it is possible that, for zero a and b,
 	// ΔC > Δa + Δb is 0, resulting in attempting
@@ -79,11 +78,9 @@ Color.prototype.deltaECMC = function (sample, {l = 2, c = 1} = {}) {
 	if (L1 >= 16) {	// cubic portion
 		SL = (0.040975 * L1) / (1 + 0.01765 * L1);
 	}
-	// console.log({SL});
 
 	// SC Chroma factor
 	let SC = ((0.0638 * C1) / (1 + 0.0131 * C1)) + 0.638;
-	// console.log({SC});
 
 	// Cross term T for blue non-linearity
 	let T;
@@ -103,7 +100,6 @@ Color.prototype.deltaECMC = function (sample, {l = 2, c = 1} = {}) {
 	let C4 = Math.pow(C1, 4);
 	let F = Math.sqrt(C4 / (C4 + 1900));
 	let SH = SC * ((F * T) + 1 - F);
-	// console.log({SH});
 
 	// Finally calculate the deltaE, term by term as root sume of squares
 	let dE = (ΔL / (l * SL)) ** 2;
@@ -113,5 +109,3 @@ Color.prototype.deltaECMC = function (sample, {l = 2, c = 1} = {}) {
 	return Math.sqrt(dE);
 	// Yay!!!
 };
-
-Color.statify(["deltaECMC"]);

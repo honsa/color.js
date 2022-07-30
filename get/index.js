@@ -1,5 +1,6 @@
+let $ = Bliss;
 let code = $("#bundle > code");
-code.classList.remove("language-none");
+code?.classList.remove("language-none");
 
 document.addEventListener("mv-change", evt => {
 	if (code.children === 0) {
@@ -7,7 +8,7 @@ document.addEventListener("mv-change", evt => {
 	}
 });
 
-$("a[download]").addEventListener("click", evt => {
+$("a[download]")?.addEventListener("click", evt => {
 	evt.target.href = createURL(code.textContent);
 });
 
@@ -22,7 +23,7 @@ function createURL(code, type = "text/javascript") {
 // async function build() {
 //   // create a bundle
 //   const bundle = await rollup({
-// 	  input: "../src/main.js",
+// 	  input: "../src/index.js",
 // 	  plugins: []
 //   });
 //

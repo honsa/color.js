@@ -1,4 +1,5 @@
-import Color from "../color.js";
+import lab from "../spaces/lab.js";
+import lch from "../spaces/lch.js";
 
 // deltaE2000 is a statistically significant improvement
 // and is recommended by the CIE and Idealliance
@@ -8,10 +9,12 @@ import Color from "../color.js";
 // DeltaE2000 is also discontinuous; in case this
 // matters to you, use deltaECMC instead.
 
-Color.prototype.deltaE2000 = function (sample, {kL = 1, kC = 1, kH = 1} = {}) {
-	let color = this;
-	sample = Color.get(sample);
+const Gfactor = 25 ** 7;
+const π = Math.PI;
+const r2d = 180 / π;
+const d2r = π / 180;
 
+export default function (color, sample, {kL = 1, kC = 1, kH = 1} = {}) {
 	// Given this color as the reference
 	// and the function parameter as the sample,
 	// calculate deltaE 2000.
@@ -23,10 +26,10 @@ Color.prototype.deltaE2000 = function (sample, {kL = 1, kC = 1, kH = 1} = {}) {
 	// kL should be increased for lightness texture or noise
 	// and kC increased for chroma noise
 
-	let [L1, a1, b1] = color.lab;
-	let C1 = color.chroma;
-	let [L2, a2, b2] = sample.lab;
-	let C2 = sample.chroma;
+	let [L1, a1, b1] = lab.from(color);
+	let C1 = lch.from(lab, [L1, a1, b1])[1];
+	let [L2, a2, b2] = lab.from(sample);
+	let C2 = lch.from(lab, [L2, a2, b2])[1];
 
 	// Check for negative Chroma,
 	// which might happen through
@@ -43,9 +46,9 @@ Color.prototype.deltaE2000 = function (sample, {kL = 1, kC = 1, kH = 1} = {}) {
 
 	// calculate a-axis asymmetry factor from mean Chroma
 	// this turns JND ellipses for near-neutral colors back into circles
-	let C7 = Math.pow(Cbar, 7);
-	const Gfactor = Math.pow(25, 7);
-	let G = 0.5 * (1 - Math.sqrt(C7/(C7+Gfactor)));
+	let C7 = Cbar ** 7;
+
+	let G = 0.5 * (1 - Math.sqrt(C7/(C7 + Gfactor)));
 
 	// scale a axes by asymmetry factor
 	// this by the way is why there is no Lab2000 colorspace
@@ -58,9 +61,7 @@ Color.prototype.deltaE2000 = function (sample, {kL = 1, kC = 1, kH = 1} = {}) {
 
 	// calculate new hues, with zero hue for true neutrals
 	// and in degrees, not radians
-	const π = Math.PI;
-	const r2d = 180 / π;
-	const d2r = π / 180;
+
 	let h1 = (adash1 === 0 && b1 === 0)? 0: Math.atan2(b1, adash1);
 	let h2 = (adash2 === 0 && b2 === 0)? 0: Math.atan2(b2, adash2);
 
@@ -163,5 +164,3 @@ Color.prototype.deltaE2000 = function (sample, {kL = 1, kC = 1, kH = 1} = {}) {
 	return Math.sqrt(dE);
 	// Yay!!!
 };
-
-Color.statify(["deltaE2000"]);

@@ -1,5 +1,4 @@
-import Color from "../spaces/jzazbz.js";
-import "../spaces/jzczhz.js";
+import jzczhz from "../spaces/jzczhz.js";
 
 // More accurate color-difference formulae
 // than the simple 1976 Euclidean distance in Lab
@@ -8,16 +7,12 @@ import "../spaces/jzczhz.js";
 // and thus a simple Euclidean root-sum of ΔL² ΔC² ΔH²
 // gives good results.
 
-Color.prototype.deltaEJz = function (sample) {
-	let color = this;
-	sample = Color.get(sample);
-
+export default function (color, sample) {
 	// Given this color as the reference
 	// and a sample,
 	// calculate deltaE in JzCzHz.
-
-	let [Jz1, Cz1, Hz1] = color.jzczhz;
-	let [Jz2, Cz2, Hz2] = sample.jzczhz;
+	let [Jz1, Cz1, Hz1] = jzczhz.from(color);
+	let [Jz2, Cz2, Hz2] = jzczhz.from(sample);
 
 	// Lightness and Chroma differences
 	// sign does not matter as they are squared.
@@ -39,9 +34,7 @@ Color.prototype.deltaEJz = function (sample) {
 	}
 
 	let Δh = Hz1 - Hz2;
-	let ΔH = 2 * Math.sqrt(Cz1 * Cz2) * Math.sin(Δh * Math.PI / 180);
+	let ΔH = 2 * Math.sqrt(Cz1 * Cz2) * Math.sin((Δh / 2) * (Math.PI / 180));
 
 	return Math.sqrt(ΔJ ** 2 + ΔC ** 2 + ΔH ** 2);
 };
-
-Color.statify(["deltaEJz"]);

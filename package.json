@@ -1,20 +1,37 @@
 {
 	"name": "colorjs.io",
-	"version": "0.0.4",
-	"description": "Color space agnostic color manipulation library",
+	"version": "0.3.0",
+	"description": "Let’s get serious about color",
+	"files": [
+		"dist/color.cjs",
+		"dist/color.cjs.map",
+		"dist/color.js",
+		"dist/color.js.map",
+		"src/"
+	],
 	"exports": {
-		"import": "./dist/color.esm.js",
-		"require": "./dist/color.cjs.js",
-		"default": "./dist/color.js"
+		".": {
+			"import": "./dist/color.js",
+			"require": "./dist/color.cjs"
+		},
+		"./fn": "./src/index-fn.js"
 	},
-	"main": "./dist/color.cjs.js",
-	"module": "./dist/color.esm.js",
+	"type": "module",
+	"main": "./dist/color.cjs",
+	"module": "./dist/color.js",
 	"directories": {
 		"test": "tests"
 	},
 	"scripts": {
 		"test": "open tests/",
-		"build": "gulp"
+		"build:css": "npx postcss \"**/*.postcss\" --base . --dir . --ext .css --config postcss.config.cjs",
+		"build:html": "npx @11ty/eleventy --config=.eleventy.cjs",
+		"build:js": "rollup -c",
+		"build": "npm run build:html && npm run build:css && npm run build:js",
+		"watch:css": "npx postcss \"**/*.postcss\" --base . --dir . --ext .css --config postcss.config.cjs --watch",
+		"watch:html": "npx @11ty/eleventy --config=.eleventy.cjs --watch",
+		"watch:js": "rollup -c --watch",
+		"watch": "npm run watch:css & npm run watch:html & npm run watch:js"
 	},
 	"repository": {
 		"type": "git",
@@ -23,25 +40,25 @@
 	"keywords": [
 		"color"
 	],
-	"author": "Lea Verou, Chris Lilley",
+	"contributors": ["Lea Verou", "Chris Lilley"],
 	"license": "MIT",
 	"bugs": {
 		"url": "https://github.com/LeaVerou/color.js/issues"
 	},
 	"homepage": "https://colorjs.io",
 	"devDependencies": {
-		"babel-eslint": "^10.1.0",
-		"eslint": "^7.2.0",
-		"gulp": "^4.0.2",
-		"gulp-file-include": "^2.2.2",
-		"gulp-postcss": "^8.0.0",
-		"gulp-rename": "^2.0.0",
-		"postcss-nesting": "^7.0.1",
-		"rollup": "^2.10.5",
-		"rollup-plugin-terser": "^5.3.0",
-		"showdown": "^1.9.1"
+		"@11ty/eleventy": "^1.0",
+		"acorn": "latest",
+		"eslint": "latest",
+		"markdown-it": "latest",
+		"postcss": "latest",
+		"postcss-cli": "latest",
+		"postcss-nesting": "latest",
+		"rollup": "^2.10",
+		"rollup-plugin-terser": "^7"
 	},
-	"dependencies": {
-		"acorn": "^7.3.1"
-	}
+	"sideEffects": [
+		"./src/index.js",
+		"./src/spaces/index.js"
+	]
 }

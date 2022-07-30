@@ -1,0 +1,159 @@
+---
+title: "Get Color.js"
+layout: "page.njk"
+has_mavo: true
+includes: '<link rel="stylesheet" href="style.css"><script src="index.js" type="module"></script>'
+---
+<main class="cn-ignore">
+
+<h2>Quick use</h2>
+
+<p>If you just want to play around ASAP, the quickest way is to import the entire library, either as a module in your JS:</p>
+
+<pre><code>import Color from "https://colorjs.io/dist/color.js";</code></pre>
+
+<p class="warning">To be able to use <code>import</code> statements in your JS, your <code class="language-markup">&lt;script></code> element needs <code>type="module"</code></p>
+
+Or, if you'd rather just have <code>Color</code> as a global variable, the classic way, just include the following script in your HTML:
+
+<pre class="language-markup"><code>&lt;script src="https://colorjs.io/dist/color.global.js">&lt;/script></code></pre>
+
+<p class="tip">You can also add <code>.min</code> right before the <code>.js</code> extension to get a minified file.
+
+<p>You can also <a href="/docs/procedural.html">import individual functions and use the tree-shakeable API</a>.</p>
+
+<h2>Via npm</h2>
+
+<p>Run:</p>
+
+<pre><code>npm install colorjs.io</code></pre>
+
+<h2>Custom bundle</h2>
+
+<p class="note">Custom bundle generator coming soon! Until then, you can import individual modules yourself, either from <code>https://colorjs.io/src/</code>
+or your local <code>node_modules/colorjs.io</code> if using npm.</p>
+<!--
+<p>Or, create a custom bundle that is tailored to your needs.</p>
+
+<p class="warning">This is a work in progress and doesn't fully work yet.
+	Right now it can generate import statements, but not an actual bundle.</p>
+
+<section mv-app="colorBundler" mv-storage="modules.json" mv-plugins="markdown">
+
+<fieldset id="core">
+	<legend>Core modules</legend>
+
+	<ul>
+		<li property="core">
+			<label>
+				<input type="checkbox" property="include" checked disabled>
+				<span property="name">Color.js core</span>
+				<meta property="id">
+				<meta property="importStatement" content='import Color from "https://colorjs.io/src/color.js";'>
+			</label>
+		</li>
+	</ul>
+</fieldset>
+
+<fieldset id="spaces">
+	<legend>Color spaces</legend>
+
+	<ul>
+		<li mv-multiple property="space">
+			<label>
+				<input type="checkbox" property="include" disabled="[false]">
+				<a property="url"><strong property="name">Lab & LCH</strong></a>
+				<meta property="id">
+				<meta property="importStatement" content='import "https://colorjs.io/src/spaces/[id].js";'>
+			</label>
+			<div property class="description" mv-markdown-options></div>
+		</li>
+	</ul>
+</fieldset>
+
+<fieldset id="optional">
+	<legend>Optional modules</legend>
+
+	<ul>
+		<li mv-multiple property="optional">
+			<label>
+				<input type="checkbox" property="include">
+				<a property="url"><strong property="name">Interpolation</strong></a>
+				<meta property="id">
+				<meta property="path">
+				<meta property="importStatement" content='import "https://colorjs.io/src/[if(path, path & &apos;/&apos;)][id].js";'>
+			</label>
+			<div property class="description" mv-markdown></div>
+		</li>
+	</ul>
+</fieldset>
+
+<fieldset id="format">
+	<legend>Global or ES6 module?</legend>
+
+	<ul>
+		<li>
+			<label>
+				<input type="radio" name="format" value="esm" checked>
+				ES6 Module only
+			</label>
+		</li>
+		<li>
+			<label>
+				<input type="radio" property name="format" value="iife">
+				Global <code>Color</code> variable
+			</label>
+		</li>
+	</ul>
+</fieldset>
+
+<fieldset id="link-vs-embed">
+	<legend>Link or Download</legend>
+
+	<ul>
+		<li>
+			<label>
+				<input type="radio" property name="link" value="link" checked>
+				Import modules from colorjs.io at runtime
+			</label>
+		</li>
+		<li>
+			<label>
+				<input type="radio" property name="link" value="embed" disabled>
+				(Coming soon) Bundle module source in downloaded file
+			</label>
+		</li>
+	</ul>
+</fieldset>
+
+<pre id="bundle" class="cn-ignore language-none"><code>
+[join(importStatement where include, '\n')]
+[if(format = "iife", 'window.Color = window.Color || Color;', '')]
+// Re-export
+export default Color;
+</code></pre>
+
+<a href="#" download="color.js">Download</a>
+
+</section>
+
+<section class="cn-ignore">
+	<h2>How to use your custom bundle</h2>
+
+	<p>The following assume your downloaded file is in the same directory as the JS/HTML file using it.
+		If not, adjust the path accordingly.</p>
+
+	<p>If using client-side, include in your page via:</p>
+
+	<pre class="language-markup"><code>
+		&lt;script src="color.js" type="module">&lt;/script>
+	</code></pre>
+
+	<p>Or, include in your JS via:</p>
+
+	<pre><code>import Color from "./color.js"</code></pre>
+
+	<p class="warning">To be able to use <code>import</code> statements in your JS, your <code class="language-markup">&lt;script></code> element needs <code>type="module"</code></p>
+</section>
+-->
+</main>

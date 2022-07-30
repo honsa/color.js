@@ -1,26 +1,38 @@
-import Color from "./../color.js";
+import ColorSpace from "../space.js";
+import {WHITES} from "../adapt.js";
+import xyz_d50 from "./xyz-d50.js";
 
-Color.defineSpace({
+// κ * ε  = 2^3 = 8
+const ε = 216/24389;  // 6^3/29^3 == (24/116)^3
+const ε3 = 24/116;
+const κ = 24389/27;   // 29^3/3^3
+
+let white = WHITES.D50;
+
+export default new ColorSpace({
 	id: "lab",
 	name: "Lab",
 	coords: {
-		L: [0, 100],
-		a: [-100, 100],
-		b: [-100, 100]
+		l: {
+			refRange: [0, 100],
+			name: "L"
+		},
+		a: {
+			refRange: [-125, 125]
+		},
+		b: {
+			refRange: [-125, 125]
+		}
 	},
-	inGamut: coords => true,
+
 	// Assuming XYZ is relative to D50, convert to CIE Lab
 	// from CIE standard, which now defines these as a rational fraction
-	white: Color.whites.D50,
-	ε: 216/24389,  // 6^3/29^3 == (24/116)^3
-	ε3: 24/116,
-	κ: 24389/27,   // 29^3/3^3
-	// κ * ε  = 2^3 = 8
-	fromXYZ(XYZ) {
-		// Convert D50-adapted XYX to Lab
-		//  CIE 15.3:2004 section 8.2.1.1
-		const {κ, ε, white} = this;
+	white,
 
+	base: xyz_d50,
+	// Convert D50-adapted XYX to Lab
+	//  CIE 15.3:2004 section 8.2.1.1
+	fromBase (XYZ) {
 		// compute xyz, which is XYZ scaled relative to reference white
 		let xyz = XYZ.map((value, i) => value / white[i]);
 
@@ -33,12 +45,10 @@ Color.defineSpace({
 			200 * (f[1] - f[2])  // b
 		];
 	},
-	toXYZ(Lab) {
-		// Convert Lab to D50-adapted XYZ
-		// Same result as CIE 15.3:2004 Appendix D although the derivation is different
-		// http://www.brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html
-		const {κ, ε3, white} = this;
-
+	// Convert Lab to D50-adapted XYZ
+	// Same result as CIE 15.3:2004 Appendix D although the derivation is different
+	// http://www.brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html
+	toBase (Lab) {
 		// compute f, starting with the luminance-related term
 		let f = [];
 		f[1] = (Lab[0] + 16)/116;
@@ -46,7 +56,7 @@ Color.defineSpace({
 		f[2] = f[1] - Lab[2]/200;
 
 		// compute xyz
-		var xyz = [
+		let xyz = [
 			f[0]   > ε3  ?  Math.pow(f[0], 3)            : (116*f[0]-16)/κ,
 			Lab[0] > 8   ?  Math.pow((Lab[0]+16)/116, 3) : Lab[0]/κ,
 			f[2]   > ε3  ?  Math.pow(f[2], 3)            : (116*f[2]-16)/κ
@@ -55,29 +65,10 @@ Color.defineSpace({
 		// Compute XYZ by scaling xyz by reference white
 		return xyz.map((value, i) => value * white[i]);
 	},
-	parse (str, parsed = Color.parseFunction(str)) {
-		if (parsed && parsed.name === "lab") {
-			let L = parsed.args[0];
 
-			// Percentages in lab() don't translate to a 0-1 range, but a 0-100 range
-			if (L.percentage) {
-				parsed.args[0] = L * 100;
-			}
-
-			return {
-				spaceId: "lab",
-				coords: parsed.args.slice(0, 3),
-				alpha: parsed.args.slice(3)[0]
-			};
-		}
-	},
-	instance: {
-		toString ({format, ...rest} = {}) {
-			if (!format) {
-				format = (c, i) => i === 0? c + "%" : c;
-			}
-
-			return Color.prototype.toString.call(this, {name: "lab", format, ...rest});
+	formats: {
+		"lab": {
+			coords: ["<percentage> | <number>", "<number>", "<number>"],
 		}
 	}
 });

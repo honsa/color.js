@@ -1,33 +1,35 @@
-import Color, {util} from "./color.js";
+import hooks from "./hooks.js";
+import {multiplyMatrices} from "./util.js";
+import {WHITES} from "./adapt.js";
 
-Color.CATs = {};
+export const CATs = {};
 
-Color.hooks.add("chromatic-adaptation-start", env => {
+hooks.add("chromatic-adaptation-start", env => {
 	if (env.options.method) {
-		env.M = Color.adapt(env.W1, env.W2, env.options.method);
+		env.M = adapt(env.W1, env.W2, env.options.method);
 	}
 });
 
-Color.hooks.add("chromatic-adaptation-end", env => {
+hooks.add("chromatic-adaptation-end", env => {
 	if (!env.M) {
-		env.M = Color.adapt(env.W1, env.W2, env.options.method);
+		env.M = adapt(env.W1, env.W2, env.options.method);
 	}
 });
 
-Color.defineCAT = function ({id, toCone_M, fromCone_M}) {
+export function defineCAT ({id, toCone_M, fromCone_M}) {
 	// Use id, toCone_M, fromCone_M like variables
-	Color.CATs[id] = arguments[0];
+	CATs[id] = arguments[0];
 };
 
-Color.adapt = function (W1, W2, id = "Bradford") {
+export function adapt (W1, W2, id = "Bradford") {
 	// adapt from a source whitepoint or illuminant W1
 	// to a destination whitepoint or illuminant W2,
 	// using the given chromatic adaptation transform (CAT)
 	// debugger;
-	let method = Color.CATs[id];
+	let method = CATs[id];
 
-	let [ρs, γs, βs] = util.multiplyMatrices(method.toCone_M, W1);
-	let [ρd, γd, βd] = util.multiplyMatrices(method.toCone_M, W2);
+	let [ρs, γs, βs] = multiplyMatrices(method.toCone_M, W1);
+	let [ρd, γd, βd] = multiplyMatrices(method.toCone_M, W2);
 
 	// all practical illuminants have non-zero XYZ so no division by zero can occur below
 	let scale = [
@@ -37,13 +39,13 @@ Color.adapt = function (W1, W2, id = "Bradford") {
 	];
 	// console.log({scale});
 
-	let scaled_cone_M = util.multiplyMatrices(scale, method.toCone_M);
-	let adapt_M	= util.multiplyMatrices(method.fromCone_M, scaled_cone_M);
+	let scaled_cone_M = multiplyMatrices(scale, method.toCone_M);
+	let adapt_M	= multiplyMatrices(method.fromCone_M, scaled_cone_M);
 	// console.log({scaled_cone_M, adapt_M});
 	return adapt_M;
 };
 
-Color.defineCAT({
+defineCAT({
 	id: "von Kries",
 	toCone_M: [
 		[  0.4002400,  0.7076000, -0.0808100 ],
@@ -56,7 +58,8 @@ Color.defineCAT({
 		[  0.0000000,  0.0000000,  1.0890636 ]
 	]
 });
-Color.defineCAT({
+
+defineCAT({
 	id: "Bradford",
 	// Convert an array of XYZ values in the range 0.0 - 1.0
 	// to cone fundamentals
@@ -73,7 +76,7 @@ Color.defineCAT({
 	]
 });
 
-Color.defineCAT({
+defineCAT({
 	id: "CAT02",
 	// with complete chromatic adaptation to W2, so D = 1.0
 	toCone_M: [
@@ -88,7 +91,7 @@ Color.defineCAT({
 	]
 });
 
-Color.defineCAT({
+defineCAT({
 	id: "CAT16",
 	toCone_M: [
 		[  0.401288,  0.650173, -0.051461 ],
@@ -103,7 +106,7 @@ Color.defineCAT({
 	]
 });
 
-Object.assign(Color.whites, {
+Object.assign(WHITES, {
 	// whitepoint values from ASTM E308-01 with 10nm spacing, 1931 2 degree observer
 	// all normalized to Y (luminance) = 1.00000
 	// Illuminant A is a tungsten electric light, giving a very warm, orange light.
@@ -121,7 +124,7 @@ Object.assign(Color.whites, {
 	// Equal-energy illuminant, used in two-stage CAT16
 	E:   [1.00000, 1.00000, 1.00000],
 
-	// The F series of illuminants represent flourescent lights
+	// The F series of illuminants represent fluorescent lights
 	F2:  [0.99186, 1.00000, 0.67393],
 	F7:  [0.95041, 1.00000, 1.08747],
 	F11: [1.00962, 1.00000, 0.64350],

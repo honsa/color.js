@@ -1,3 +1,5 @@
+import RefTest from "https://htest.dev/src/reftest.js";
+
 RefTest.hooks.add("reftest-testrow", function (env) {
 	let table = this.table;
 
@@ -13,8 +15,16 @@ RefTest.hooks.add("reftest-testrow", function (env) {
 		}
 
 		let cell = env.cells[i];
-		let color = new Color(cell.textContent);
-		cell.style.setProperty("--color", color.toString({fallback: true}));
+		let color;
+
+		try {
+			color = new Color(cell.textContent);
+		}
+		catch (e) {
+			return;
+		}
+
+		cell.style.setProperty("--color", color.display());
 		cell.classList.add(color.luminance > .5 || color.alpha < .5? "light" : "dark");
 	}
 });

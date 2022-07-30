@@ -43,9 +43,12 @@ function update() {
 		output.tBodies[0].textContent = "";
 		let ret = "";
 
-		for (let id in Color.spaces) {
+		// Prevent aliases showing up in the output
+		let spaces = new Set(Color.Space.all);
+
+		for (let space of spaces) {
+			let id = space.id;
 			let converted = color.to(id);
-			let space = Color.spaces[id];
 
 			if (id === "srgb" || (id === "p3") && supportsP3) {
 				colorOutput.style.background = converted;
@@ -53,12 +56,26 @@ function update() {
 			}
 
 			let precision = precisionInput.value;
+			let inGamut = converted.inGamut();
+			let str = converted.toString({precision, inGamut: false});
+			let str_mapped = converted.toString({precision, inGamut: true});
+			let permalink = `?color=${encodeURIComponent(str)}&precision=${encodeURIComponent(precision)}`;
+			let permalink_mapped = `?color=${encodeURIComponent(str_mapped)}&precision=${encodeURIComponent(precision)}`;
 
 			ret += `<tr>
 				<th>${space.name}</th>
 				<td>${converted.coords.join(", ")}</td>
-				<td>${converted.toString({precision})}</td>
-				<td>${Color.prototype.toString.call(converted, {precision})}</td>
+				<td>
+					<div class="serialization ${inGamut || str === str_mapped? "in-gamut" : "out-of-gamut"} ${!inGamut && str === str_mapped? "gamut-mapped" : ""}">
+						<a href="${permalink}" ${!inGamut? 'title="Out of gamut"' : ""}>${str}</a>
+						<button class="copy" data-clipboard-text="${str}" title="Copy">📋</button>
+					</div>
+					${str !== str_mapped? `
+					<div class="serialization gamut-mapped">
+						<a href="${permalink_mapped}">${str_mapped}</a>
+						<button class="copy" data-clipboard-text="${str_mapped}" title="Copy">📋</button>
+					</div>` : ""}
+				</td>
 			</tr>`;
 		}
 
@@ -81,10 +98,21 @@ updateFromURL();
 
 addEventListener("popstate", updateFromURL);
 
-document.body.addEventListener("click", evt => {
-	if (evt.target.matches("td:nth-child(3), td:nth-child(4)")) {
-		// Color cell
-		colorInput.value = evt.target.textContent;
-		update();
+function wait (ms) {
+	return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+document.body.addEventListener("click", async evt => {
+	let copyButton = evt.target.closest(".copy");
+	if (copyButton) {
+		try {
+			await navigator.clipboard.writeText(copyButton.dataset.clipboardText);
+			copyButton.textContent = "✅";
+			await wait(1000);
+			copyButton.textContent = "📋";
+		}
+		catch(e) {
+			alert("Failed to copy to clipboard");
+		}
 	}
 })
